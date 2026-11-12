@@ -173,6 +173,14 @@ def test_state_dir_must_be_outside_the_workspace(project):
         Session(project.workspace, project.policy(), state_dir=project.workspace)
 
 
+def test_redteam_refuses_to_run_without_pytest(monkeypatch, capsys):
+    # Otherwise every attack that runs the fixture's tests would fail for the
+    # wrong reason and be reported as blocked.
+    monkeypatch.setattr("importlib.util.find_spec", lambda name: None)
+    assert cli(["redteam", "--only", "budget_flood"]) == 2
+    assert "pytest" in capsys.readouterr().err
+
+
 def test_cli_log_prints_one_line_per_record(project, capsys):
     with open_session(project) as session:
         session.gateway.execute(call("read_file", path="README.md"))

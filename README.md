@@ -112,7 +112,7 @@ pip install -e ".[dev]"
 python examples/quickstart.py     # the tour above
 aegis redteam                     # attack the harness, about 90 seconds
 aegis redteam --list              # the attack catalogue
-pytest                            # 125 tests; add -m "not slow" to skip the attack suite
+pytest                            # 126 tests; add -m "not slow" to skip the attack suite
 ```
 
 ### Supervise your own agent
@@ -290,7 +290,7 @@ src/aegis/
   redteam/           attacks, fixtures, runner
   policies/          default.toml, permissive.toml
 examples/quickstart.py
-tests/               125 tests, including the whole attack suite
+tests/               126 tests, including the whole attack suite
 ```
 
 ## License

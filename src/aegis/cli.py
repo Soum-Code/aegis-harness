@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -32,6 +33,12 @@ def _cmd_redteam(args: argparse.Namespace) -> int:
     unknown = sorted(set(args.only or []) - known)
     if unknown:
         print(f"unknown attack(s): {', '.join(unknown)}", file=sys.stderr)
+        return 2
+
+    if importlib.util.find_spec("pytest") is None:
+        # Without it every attack that runs the fixture's tests fails for the
+        # wrong reason and would be counted as blocked.
+        print("the attack suite runs pytest inside its fixture project: pip install pytest", file=sys.stderr)
         return 2
 
     profiles = ALL_PROFILES if args.profile == "all" else (args.profile,)
