@@ -1,0 +1,27 @@
+# RED-TEAM ONLY. Allows almost everything so the suite can measure what the
+# monitor catches on its own, with the policy layer out of the way.
+# Do not run a real agent under this file.
+version = 1
+
+[limits]
+max_tool_calls = 60
+max_output_bytes = 65536
+exec_timeout_s = 60.0
+
+[fs.read]
+allow = ["**"]
+
+[fs.list]
+allow = ["**"]
+
+[fs.write]
+allow = ["**"]
+
+[fs.delete]
+allow = ["**"]
+
+[proc.exec]
+allow = [["python", "..."]]
+
+[net.http]
+allow = ["*"]

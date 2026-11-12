@@ -1,0 +1,32 @@
+# Aegis default policy for a coding agent.
+# Anything not listed under `allow` is denied. `deny` always wins.
+version = 1
+
+[limits]
+max_tool_calls = 60
+max_output_bytes = 65536
+exec_timeout_s = 60.0
+
+[fs.read]
+allow = ["**"]
+deny = ["**/.env", "**/.env.*", "**/*.pem", "**/*.key", "**/id_rsa*", ".git/**"]
+
+[fs.list]
+allow = ["**"]
+deny = [".git/**"]
+
+[fs.write]
+allow = ["src/**", "tests/**", "*.md"]
+deny = ["**/.env", "**/.env.*", "**/conftest.py"]
+
+[fs.delete]
+allow = []
+
+[proc.exec]
+# Each rule is an argv pattern. A trailing "..." accepts any further arguments.
+allow = [
+    ["python", "-m", "pytest", "..."],
+]
+
+[net.http]
+allow = []

@@ -1,0 +1,46 @@
+[project]
+name = "aegis-harness"
+version = "0.1.0"
+description = "A tamper-resistant harness for LLM agents: capability policy, independent monitor, hash-chained audit log, red-team suite."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Soum-Code" }]
+keywords = ["llm", "agents", "ai-safety", "sandbox", "audit-log", "red-team", "prompt-injection"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Repository = "https://github.com/Soum-Code/aegis-harness"
+Issues = "https://github.com/Soum-Code/aegis-harness/issues"
+Changelog = "https://github.com/Soum-Code/aegis-harness/blob/main/CHANGELOG.md"
+
+[project.scripts]
+aegis = "aegis.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aegis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["slow: runs the whole attack suite (about 90 seconds)"]
