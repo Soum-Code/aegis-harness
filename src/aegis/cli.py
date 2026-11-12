@@ -2,6 +2,7 @@
 
     aegis redteam                 run the attack suite (two guarded profiles and a baseline)
     aegis redteam --list          show the catalogue
+    aegis run "<task>"            run Claude on a task under the harness
     aegis verify <state_dir>      check a session's audit log
     aegis log <state_dir>         print a session's audit log, one line per record
 """
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from . import __version__
 from .audit import read_records, verify_log
+from .llm.claude import DEFAULT_MODEL
 from .monitor import AUDIT_FILE, KEY_FILE
 
 
@@ -59,6 +61,42 @@ def _cmd_redteam(args: argparse.Namespace) -> int:
         print(f"\nFAIL  unexpected successes: {regressions or 'none'}; invalid logs: {bad_logs or 'none'}")
         return 1
     return 0
+
+
+def _cmd_run(args: argparse.Namespace) -> int:
+    try:
+        import anthropic
+    except ImportError:
+        print('aegis run needs the Anthropic SDK: pip install "aegis-harness[claude]"', file=sys.stderr)
+        return 2
+    from .agent import run_agent
+    from .llm.claude import ClaudeLLM
+    from .policy import Policy
+    from .session import Session
+
+    policy_path = Path(args.policy) if args.policy else Path(__file__).parent / "policies" / "default.toml"
+    session = Session(Path(args.workspace), Policy.load(policy_path), policy_path=policy_path)
+    try:
+        with session:
+            outcome = run_agent(ClaudeLLM(model=args.model), session.gateway, args.task)
+    except anthropic.AnthropicError as exc:
+        print(f"Claude API error: {exc}\naudit log: {session.state_dir}", file=sys.stderr)
+        return 1
+
+    calls = {c.call_id: c for entry in outcome.transcript if entry["role"] == "assistant" for c in entry["calls"]}
+    for result in outcome.results:
+        call, decision = calls[result.call_id], result.decision
+        target = call.args.get("path") or call.args.get("url") or call.args.get("argv", "")
+        by = "" if decision.allowed else f"  [{decision.source}:{decision.rule}]"
+        print(f"{decision.verdict.value.upper():5}  {call.tool}({target}){by}")
+
+    report = session.report
+    print(f"\n{outcome.final_text}\n")
+    print(f"agent stopped: {outcome.stop_reason}; session: {report.outcome}")
+    print(f"audit log: {report.state_dir}")
+    if report.sealed:
+        print(f"verify with: aegis verify {report.state_dir} --expect-head {report.head}")
+    return 0 if outcome.stop_reason == "finished" else 1
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
@@ -111,6 +149,13 @@ def build_parser() -> argparse.ArgumentParser:
     redteam.add_argument("--json", metavar="PATH", help="also write the results as JSON")
     redteam.add_argument("--list", action="store_true", help="list the attacks and exit")
     redteam.set_defaults(func=_cmd_redteam)
+
+    run = sub.add_parser("run", help="run Claude on a task under the harness")
+    run.add_argument("task", help="what the agent should do")
+    run.add_argument("--workspace", default=".", help="project directory the agent works in (default: here)")
+    run.add_argument("--policy", metavar="FILE", help="policy file (default: the shipped default policy)")
+    run.add_argument("--model", default=DEFAULT_MODEL)
+    run.set_defaults(func=_cmd_run)
 
     verify = sub.add_parser("verify", help="verify a session's audit log")
     verify.add_argument("state_dir")

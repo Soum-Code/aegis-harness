@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Claude adapter (`aegis.llm.claude.ClaudeLLM`) and `aegis run "<task>"`, so a real
+  model can work under the harness. Needs the `claude` extra and an API key.
+
 ## 0.1.0 (2026-11-10)
 
 First version.

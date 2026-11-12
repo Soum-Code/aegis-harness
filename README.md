@@ -112,8 +112,26 @@ pip install -e ".[dev]"
 python examples/quickstart.py     # the tour above
 aegis redteam                     # attack the harness, about 90 seconds
 aegis redteam --list              # the attack catalogue
-pytest                            # 126 tests; add -m "not slow" to skip the attack suite
+pytest                            # 129 tests; add -m "not slow" to skip the attack suite
 ```
+
+### Run Claude under the harness
+
+```bash
+pip install -e ".[claude]"
+export ANTHROPIC_API_KEY=...      # your own key; this spends API credits
+aegis run "the tests fail: find the bug and fix it" --workspace path/to/project
+```
+
+Claude proposes tool calls; the gateway, the policy and the monitor decide which of
+them run. The command prints every call with its verdict, then Claude's summary, the
+audit log's location and the `aegis verify` command for it. The model is
+`claude-opus-5-5` unless you pass `--model`, and `--policy FILE` replaces the default
+policy. If a safety classifier declines a request, the API's server-side fallback
+re-runs it on another model.
+
+The adapter ([`llm/claude.py`](src/aegis/llm/claude.py)) is tested against a fake
+client. CI does not call the live API.
 
 ### Supervise your own agent
 
@@ -137,8 +155,8 @@ assert report.verify().ok
 ```
 
 A model adapter is any object with `next_turn(transcript) -> Turn` (see
-[`llm/base.py`](src/aegis/llm/base.py)). v0.1 ships the scripted one; a real model
-adapter is on the roadmap.
+[`llm/base.py`](src/aegis/llm/base.py)). Two ship: the scripted one above and
+`aegis.llm.claude.ClaudeLLM`.
 
 ### Policy
 
@@ -264,7 +282,7 @@ Also worth knowing:
 ## Roadmap
 
 - [ ] Container sandbox: no network by default, state directory not mounted. Closes gap 1.
-- [ ] Claude adapter, so a real model can run under the harness.
+- [x] Claude adapter, so a real model can run under the harness (`aegis run`).
 - [ ] Injection fuzzing: many phrasings of the same hidden instruction, measured against a live model.
 - [ ] Held-out tests and mutation testing for reward hacking. Closes gap 2.
 - [ ] Monitor rules for test-runner configuration. Closes gap 3.
@@ -286,11 +304,11 @@ src/aegis/
   sandbox.py         where commands run
   session.py         one supervised run
   agent.py           the agent loop
-  llm/               model adapters (scripted)
+  llm/               model adapters (scripted, Claude)
   redteam/           attacks, fixtures, runner
   policies/          default.toml, permissive.toml
 examples/quickstart.py
-tests/               126 tests, including the whole attack suite
+tests/               129 tests, including the whole attack suite
 ```
 
 ## License
