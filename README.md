@@ -201,7 +201,7 @@ the weakened tests pass), not by what the harness says it did.
 | permissive | 29 | 21 | 2 | 6 | 20.7% |
 | no-monitor (baseline) | 25 | 8 | 0 | 17 | 68.0% |
 
-Measured on Windows 11, Python 3.14, local sandbox. Every success in the guarded
+Measured on Windows 11 (Python 3.14) and reproduced by CI on Linux (Python 3.13), local sandbox. Every success in the guarded
 profiles is a documented gap; there were no unexpected ones. The eight baseline
 blocks are all the gateway's path confinement, which does not depend on the monitor.
 The baseline skips attacks that target the monitor itself, which is why it has fewer.
