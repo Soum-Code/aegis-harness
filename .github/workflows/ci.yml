@@ -1,0 +1,70 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Unit and session tests
+        run: python -m pytest -m "not slow"
+      - name: Attack suite as a regression test
+        run: python -m pytest -m slow
+
+  redteam-report:
+    name: red-team report
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: python -m pip install -e .
+      - name: Run the attack suite
+        shell: bash
+        run: |
+          set -o pipefail
+          aegis redteam --json runs/redteam.json | tee runs-table.txt
+      - name: Publish the table
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### Red-team results'
+            echo
+            echo '```text'
+            cat runs-table.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: redteam-report
+          path: runs/redteam.json
+          if-no-files-found: warn
